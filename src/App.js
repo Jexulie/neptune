@@ -11,9 +11,10 @@ class App extends Component {
     this.state = {
       error: null,
       loading: true,
-      cities : [],
-      photos: [],
-      time: null
+      clientCity: null,
+      otherCities : [],
+      time: "day",
+      idDist: 1
     }
     this.callClientLocation = this.callClientLocation.bind(this);
     this.callAnotherLocation = this.callAnotherLocation.bind(this);
@@ -47,10 +48,6 @@ class App extends Component {
                     wind_degree: res.data.wind.deg
                   }
                 }
-                console.log(clientWeather)
-                this.setState({
-                  cities : [...this.state.cities, clientWeather]
-                })
                 axios.get(`https://api.unsplash.com/photos/random?query=${clientWeather.description}+${this.state.time}+${clientLocation}&client_id=${photo_key}`)
                   .then(res => {
                     var photo = {
@@ -59,7 +56,11 @@ class App extends Component {
                       small: res.data.urls.thumb
                     }
                     this.setState({
-                      photos: [...this.state.photos, photo],
+                      clientCity: {
+                        id: 0,
+                        clientWeather: clientWeather,
+                        photo: photo
+                      },
                       loading: false
                     })
                   })
@@ -81,7 +82,6 @@ class App extends Component {
   }
 
   callAnotherLocation(location){
-    this.setState({loading: true});
     axios.get(`http://api.openweathermap.org/data/2.5/weather?q=${location}&units=metric&appid=${weather_key}`)
       .then(res => {
         var anotherWeather = {
@@ -98,9 +98,9 @@ class App extends Component {
             wind_degree: res.data.wind.deg
           }
         }
-        this.setState({
-          cities : [...this.state.cities, anotherWeather]
-        })
+        // this.setState({
+        //   cities : [...this.state.cities, anotherWeather],
+        // })
         axios.get(`https://api.unsplash.com/photos/random?query=${anotherWeather.description}+${this.state.time}+${location}&client_id=${photo_key}`)
           .then(res => {
             var photo = {
@@ -109,8 +109,12 @@ class App extends Component {
               small: res.data.urls.thumb
             }
             this.setState({
-              photos: [...this.state.photos, photo],
-              loading: false
+              otherCities: [...this.state.otherCities, {
+                  id: this.state.idDist,
+                  anotherWeather: anotherWeather,
+                  photo: photo
+              }],
+              idDist: this.state.idDist + 1
             })
           })
           .catch(err => {
@@ -124,9 +128,16 @@ class App extends Component {
 
   render() {
     console.log(this.state)
+    var city = ['London', 'Dublin', 'Istanbul', 'Tokyo', 'Seoul', 'Rome', 'Moscow', 'New York', 'Washington', 'Malta', 'Montreal', 'Paris']
+    var list = this.state.otherCities.map(p => {
+      return (
+        <li key={p.id}><img src={p.photo.small} alt=""/></li>
+      )
+    })
     return (
       <main className="App">
-        {this.state.loading !== true ? (<img src={this.state.photos[0].large} alt=""/>) : <p>Loading...</p>}
+        {this.state.loading !== true ? (<ul>{list}</ul>) : <p>Loading...</p>}
+        <button onClick={() => this.callAnotherLocation(city[Math.floor(Math.random()*city.length)])}>Add City</button>
         <Citylist/>
         <Settings/>
       </main>
