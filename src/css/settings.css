@@ -1,0 +1,28 @@
+.Settings{
+    position: fixed;
+    bottom: 20px;
+    width: 100%;
+}
+.settings-wrapper{
+    display: flex;
+    flex-direction: column; 
+}
+.settings-content-shown{
+    display: flex;
+    justify-content: space-evenly;
+    transition: ease all 1.5s;
+}
+.settings-content-hidden{
+    display: flex;
+    justify-content: space-evenly;
+    transform: translateY(300px);
+    transition: ease all 1.5s;
+}
+.options{
+    display: flex;
+    align-content: space-between;
+}
+.sizes{
+    display: flex;
+    align-content: space-between;
+}

@@ -8,15 +8,6 @@ img{
     display: flex;
     flex-direction: column;
 }
-.show{
-    display: block
-}
-.hidden{
-    display: none
-}
-.Citylist{
-    margin-bottom: 200px;
-}
 p{
     color: rgb(161, 160, 160);
 }

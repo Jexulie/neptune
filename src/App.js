@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 import Citylist from './components/Citylist';
+import Clientcity from './components/Clientcity';
 import Settings from './components/Settings';
 import './css/app.css';
 import { location_key, weather_key, photo_key } from './keys';
@@ -9,12 +10,12 @@ class App extends Component {
   constructor(props){
     super(props)
     this.state = {
-      error: null,
+      listLoading: true,
       loading: true,
-      clientCity: null,
-      otherCities : [],
-      time: "day",
-      idDist: 1
+      clientCity: {},
+      otherCities: [],
+      id : 1
+      
     }
     this.callClientLocation = this.callClientLocation.bind(this);
     this.callAnotherLocation = this.callAnotherLocation.bind(this);
@@ -98,9 +99,6 @@ class App extends Component {
             wind_degree: res.data.wind.deg
           }
         }
-        // this.setState({
-        //   cities : [...this.state.cities, anotherWeather],
-        // })
         axios.get(`https://api.unsplash.com/photos/random?query=${anotherWeather.description}+${this.state.time}+${location}&client_id=${photo_key}`)
           .then(res => {
             var photo = {
@@ -110,11 +108,12 @@ class App extends Component {
             }
             this.setState({
               otherCities: [...this.state.otherCities, {
-                  id: this.state.idDist,
+                  id: this.state.id,
                   anotherWeather: anotherWeather,
                   photo: photo
               }],
-              idDist: this.state.idDist + 1
+              id: this.state.id + 1,
+              listLoading: false
             })
           })
           .catch(err => {
@@ -126,19 +125,38 @@ class App extends Component {
       });
   }
 
-  render() {
-    console.log(this.state)
-    var city = ['London', 'Dublin', 'Istanbul', 'Tokyo', 'Seoul', 'Rome', 'Moscow', 'New York', 'Washington', 'Malta', 'Montreal', 'Paris']
-    var list = this.state.otherCities.map(p => {
-      return (
-        <li key={p.id}><img src={p.photo.small} alt=""/></li>
-      )
+  handleaddCity(location){
+    this.callAnotherLocation(location);
+  }
+
+  handleremoveCity(id){
+    var filtered = this.state.otherCities.filter(c => {
+      console.log(id, c.id)
+      return c.id !== id
     })
+    this.setState({otherCities: filtered})
+  }
+
+  render() {
+    // TODO: send css sizes as props
+    var content;
+    if(this.state.loading === false){
+      content = (
+        <div className="container">
+          <Clientcity clientCity={this.state.clientCity} loading={this.state.loading} />
+          <Citylist 
+            otherCities={this.state.otherCities}
+            listLoading={this.state.listLoading}
+            addCity={this.handleaddCity.bind(this)}
+            removeCity={this.handleremoveCity.bind(this)}
+            />
+        </div>
+      )
+    }
+    console.log(this.state)
     return (
       <main className="App">
-        {this.state.loading !== true ? (<ul>{list}</ul>) : <p>Loading...</p>}
-        <button onClick={() => this.callAnotherLocation(city[Math.floor(Math.random()*city.length)])}>Add City</button>
-        <Citylist/>
+        {content}
         <Settings/>
       </main>
     );
@@ -146,3 +164,78 @@ class App extends Component {
 }
 
 export default App;
+
+/* Test Data 
+
+clientCity: {
+  clientWeather: {
+    cityName: "Eskişehir",
+    description: "clear sky",
+    details: {
+      humidity: 55,
+      pressure: 1001,
+      temp_max: 19,
+      temp_min: 23,
+      wind_speed: 5.3,
+      wind_degree: 13
+    },
+    temperature: 19,
+    weatherState: "Clear",
+    id: 0,
+    photo: {
+      large: "https://images.unsplash.com/photo-1502324676454-4c4943764606?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=1080&fit=max&ixid=eyJhcHBfaWQiOjI0Mjk5fQ&s=1ab1197540623b0b4915cf4332d39a6b",
+      medium: "https://images.unsplash.com/photo-1502324676454-4c4943764606?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=400&fit=max&ixid=eyJhcHBfaWQiOjI0Mjk5fQ&s=a66873ccab107dc4849a073291392f67",
+      small: "https://images.unsplash.com/photo-1502324676454-4c4943764606?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=200&fit=max&ixid=eyJhcHBfaWQiOjI0Mjk5fQ&s=cb36b6bd12c00fa6fb2b0e984f3e8e9d"
+    }
+  }
+}
+
+  otherCities: [
+    {
+      anotherWeather: {
+        cityName: "London",
+        description: "mist",
+        details: {
+          humidity: 55,
+          pressure: 1001,
+          temp_max: 19,
+          temp_min: 23,
+          wind_speed: 5.3,
+          wind_degree: 13
+        },
+        temperature: 12.46,
+        weatherState: "Mist",
+        id: 1,
+        photo: {
+          large: "https://images.unsplash.com/photo-1497216429614-5bd7dbd9fc48?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=1080&fit=max&ixid=eyJhcHBfaWQiOjI0Mjk5fQ&s=86aec973ac9d29d1eb6fe4418a5fd064",
+          medium: "https://images.unsplash.com/photo-1497216429614-5bd7dbd9fc48?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=400&          fit=max&ixid=eyJhcHBfaWQiOjI0Mjk5fQ&s=d677ec77869416fea099158e7ccf4379",
+          small: "https://images.unsplash.com/photo-1497216429614-5bd7dbd9fc48?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=200&         fit=max&ixid=eyJhcHBfaWQiOjI0Mjk5fQ&s=9c9ce355de81020fca18902506ea7d4f"
+        }
+      }
+    }
+  ]
+
+*/
+
+
+
+
+
+/* 
+
+this.state = {
+      error: null,
+      loading: true,
+      clientCity: null,
+      otherCities : [],
+      time: "day",
+      id: 1
+    }
+
+*/
+
+
+
+
+
+
