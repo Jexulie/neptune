@@ -1,28 +1,44 @@
 .Settings{
     position: fixed;
-    bottom: 20px;
-    width: 100%;
+    top: 20px;
+    right: 20px;
 }
 .settings-wrapper{
     display: flex;
-    flex-direction: column; 
+    flex-direction: column;
+    justify-content: center;
 }
-.settings-content-shown{
-    display: flex;
-    justify-content: space-evenly;
-    transition: ease all 1.5s;
-}
-.settings-content-hidden{
-    display: flex;
-    justify-content: space-evenly;
-    transform: translateY(300px);
-    transition: ease all 1.5s;
-}
+
 .options{
     display: flex;
-    align-content: space-between;
+    flex-direction: column;
+    align-content: space-around;
+    width: 50px;
 }
-.sizes{
-    display: flex;
-    align-content: space-between;
+
+.switch{
+    margin-top: 20px;
+}
+
+.tempSwitch{
+    color: #069;
+}
+
+.themeSwitch{
+    color: rgb(255, 0, 0)
+}
+
+.settings-content-shown{
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    transition: ease all 1.5s;
+}
+
+.settings-content-hidden{
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    transition: ease all 1.5s;
+    transform: translateX(-300px);
 }

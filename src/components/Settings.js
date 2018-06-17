@@ -18,25 +18,27 @@ class Settings extends Component {
       this.setState({
         settingString: "settings", 
         settingBar: false,
-        settingContentClass: "settings-content-hidden"})
+        settingContentClass: "settings-content-hidden"});
     }else{
       this.setState({
         settingString: "clear",
         settingBar: true,
-        settingContentClass: "settings-content-shown"})
+        settingContentClass: "settings-content-shown"});
     }
   }
 
   handleTempTypeSwitch(e){
+    this.props.changeTempType(!this.state.isCelcius);
     this.setState({
       isCelcius: !this.state.isCelcius
-    })
+    });
   }
 
   handleThemeType(e){
+    this.props.changeTheme(!this.state.isLightTheme);
     this.setState({
       isLightTheme: !this.state.isLightTheme
-    })
+    });
   }
 
   render() {
@@ -48,30 +50,25 @@ class Settings extends Component {
         <div className="settings-wrapper">
           <div className={this.state.settingContentClass}>
             <div className="about">
-              <button className="btn indigo lighten-1">About</button>
-            </div>
-            <div className="sizes">
-              <button className="btn blue darken-4">Large Size</button>
-              <button className="btn blue darken-2">Medium Size</button>
-              <button className="btn blue lighten-2">Small Size</button>
+              <p>Made By Jexulie in 2018.</p>
             </div>
             <div className="options">
               <div className="switch temp">
-                <label>
+                <label className="tempSwitch">
                   Fahrenheit
                   <input type="checkbox" checked={this.state.isCelcius} onChange={this.handleTempTypeSwitch.bind(this)}/>
                   <span className="lever"></span>
                   Celsius
                 </label>
               </div>
-              <div className="switch theme">
-                <label>
+              {/* <div className="switch theme">
+                <label className="themeSwitch">
                   Dark Theme
                   <input type="checkbox" checked={this.state.isLightTheme} onChange={this.handleThemeType.bind(this)}/>
                   <span className="lever"></span>
                   Light Theme
                 </label>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>

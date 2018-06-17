@@ -1,27 +1,37 @@
 import React, { Component } from 'react';
+
 import axios from 'axios';
+
 import Citylist from './components/Citylist';
 import Clientcity from './components/Clientcity';
 import Settings from './components/Settings';
+
 import './css/app.css';
+
 import { location_key, weather_key, photo_key } from './keys';
+
+// TODO: Add error msg notification
 
 class App extends Component {
   constructor(props){
     super(props)
     this.state = {
-      listLoading: true,
+      error: null,
+      listLoading: false,
       loading: true,
       clientCity: {},
       otherCities: [],
+      time: null,
+      tempType: 'C',
       id : 1
-      
     }
+    this.getTime = this.getTime.bind(this)
     this.callClientLocation = this.callClientLocation.bind(this);
     this.callAnotherLocation = this.callAnotherLocation.bind(this);
   }
 
   componentDidMount(){
+    this.getTime()
     this.callClientLocation();
   }
 
@@ -37,19 +47,19 @@ class App extends Component {
               .then(res => {
                 var clientWeather = {
                   cityName: res.data.name,
-                  temperature: res.data.main.temp,
+                  temperature: (res.data.main.temp).toFixed(1),
                   weatherState: res.data.weather[0].main,
                   description: res.data.weather[0].description,
                   details: {
                     humidity: res.data.main.humidity,
                     pressure: res.data.main.pressure,
-                    temp_max: res.data.main.temp_max,
-                    temp_min: res.data.main.temp_min,
+                    temp_max: (res.data.main.temp_max).toFixed(1),
+                    temp_min: (res.data.main.temp_min).toFixed(1),
                     wind_speed: res.data.wind.speed,
                     wind_degree: res.data.wind.deg
                   }
                 }
-                axios.get(`https://api.unsplash.com/photos/random?query=${clientWeather.description}+${this.state.time}+${clientLocation}&client_id=${photo_key}`)
+                axios.get(`https://api.unsplash.com/photos/random?query=${clientWeather.description}+${this.state.time}+${clientLocation}+weather&client_id=${photo_key}`)
                   .then(res => {
                     var photo = {
                       large: res.data.urls.regular,
@@ -87,19 +97,19 @@ class App extends Component {
       .then(res => {
         var anotherWeather = {
           cityName: res.data.name,
-          temperature: res.data.main.temp,
+          temperature: (res.data.main.temp).toFixed(1),
           weatherState: res.data.weather[0].main,
           description: res.data.weather[0].description,
           details: {
             humidity: res.data.main.humidity,
             pressure: res.data.main.pressure,
-            temp_max: res.data.main.temp_max,
-            temp_min: res.data.main.temp_min,
+            temp_max: (res.data.main.temp_max).toFixed(1),
+            temp_min: (res.data.main.temp_min).toFixed(1),
             wind_speed: res.data.wind.speed,
             wind_degree: res.data.wind.deg
           }
         }
-        axios.get(`https://api.unsplash.com/photos/random?query=${anotherWeather.description}+${this.state.time}+${location}&client_id=${photo_key}`)
+        axios.get(`https://api.unsplash.com/photos/random?query=${anotherWeather.description}+${this.state.time}+${location}+weather&client_id=${photo_key}`)
           .then(res => {
             var photo = {
               large: res.data.urls.regular,
@@ -131,111 +141,135 @@ class App extends Component {
 
   handleremoveCity(id){
     var filtered = this.state.otherCities.filter(c => {
-      console.log(id, c.id)
       return c.id !== id
     })
     this.setState({otherCities: filtered})
   }
 
+  getTime(){
+    var today = new Date().getHours()
+    if(today >= 1 && today < 7){
+      this.setState({time: 'night'});
+    }else if(today >= 7 && today < 11){
+      this.setState({time: 'morning'});
+    }else if(today >= 11 && today < 13){
+      this.setState({time: 'noon'});
+    }else if(today >= 14 && today < 18){
+      this.setState({time: 'evening'});
+    }else if(today >= 18 && today <= 24){
+      this.setState({time: 'night'});
+    }
+  }
+
+  calcTemp(isCelsius){
+
+    var toCelsius = temp => ((temp * 1.8) + 32).toFixed(1);
+
+    var toFahrenheit = temp => ((temp - 32) * (5/9)).toFixed(1);
+
+    var citylistTemp = this.state.otherCities.map(o => o.anotherWeather.temperature);
+    var citylistDetails = this.state.otherCities.map(o => o.anotherWeather.details);
+
+    if(isCelsius === false){
+      var changedToCList = citylistTemp.map(t => toCelsius(t));
+      var changedToCListDetails = citylistDetails.map(t => {
+        return {
+          ...t,
+          temp_max: toCelsius(t.temp_max),
+          temp_min: toCelsius(t.temp_min)
+        }
+      })
+      this.setState({tempType: 'F'})
+      this.setState(prevState => ({
+        clientCity: {
+          ...prevState.clientCity,
+          clientWeather: {
+            ...prevState.clientCity.clientWeather,
+            temperature: toCelsius(this.state.clientCity.clientWeather.temperature),
+            details: {
+              ...prevState.clientCity.clientWeather.details,
+              temp_max: toCelsius(this.state.clientCity.clientWeather.details.temp_max),
+              temp_min: toCelsius(this.state.clientCity.clientWeather.details.temp_min)
+            }
+          }
+        }
+      })
+      )
+      var currCitiesC = this.state.otherCities;
+      var changedCitiesC = currCitiesC.map((i, l) => {
+        i.anotherWeather.temperature = changedToCList[l]
+        i.anotherWeather.details = changedToCListDetails[l]
+        return i
+      })
+      this.setState({
+        otherCities: changedCitiesC
+      })
+    }else{
+      var changedToFList = citylistTemp.map(t => toFahrenheit(t));
+      var changedToFListDetails = citylistDetails.map(t => {
+        return {
+          ...t,
+          temp_max: toFahrenheit(t.temp_max),
+          temp_min: toFahrenheit(t.temp_min)
+        }
+      })
+      this.setState({tempType: 'C'})
+      this.setState(prevState => ({
+        clientCity: {
+          ...prevState.clientCity,
+          clientWeather: {
+            ...prevState.clientCity.clientWeather,
+            temperature: toFahrenheit(this.state.clientCity.clientWeather.temperature),
+            details: {
+              ...prevState.clientCity.clientWeather.details,
+              temp_max: toFahrenheit(this.state.clientCity.clientWeather.details.temp_max),
+              temp_min: toFahrenheit(this.state.clientCity.clientWeather.details.temp_min)
+            }
+          }
+        }
+      })
+      )
+      var currCitiesF = this.state.otherCities;
+      var changedCitiesF = currCitiesF.map((i, l) => {
+        i.anotherWeather.temperature = changedToFList[l]
+        i.anotherWeather.details = changedToFListDetails[l]
+        return i
+      })
+      this.setState({
+        otherCities: changedCitiesF
+      })
+    }    
+  }
+
   render() {
-    // TODO: send css sizes as props
-    var content;
-    if(this.state.loading === false){
-      content = (
+      var content = (
         <div className="container">
-          <Clientcity clientCity={this.state.clientCity} loading={this.state.loading} />
+          <Clientcity 
+            clientCity={this.state.clientCity}
+            loading={this.state.loading}
+            tempType={this.state.tempType}
+            />
           <Citylist 
             otherCities={this.state.otherCities}
             listLoading={this.state.listLoading}
             addCity={this.handleaddCity.bind(this)}
             removeCity={this.handleremoveCity.bind(this)}
+            tempType={this.state.tempType}
             />
         </div>
       )
-    }
-    console.log(this.state)
     return (
       <main className="App">
+        <div className="header container center">
+          <h2>Neptune Weather App</h2>
+        </div>
         {content}
-        <Settings/>
+        <Settings
+          changeTempType={this.calcTemp.bind(this)}
+          />
       </main>
     );
   }
 }
 
 export default App;
-
-/* Test Data 
-
-clientCity: {
-  clientWeather: {
-    cityName: "Eskişehir",
-    description: "clear sky",
-    details: {
-      humidity: 55,
-      pressure: 1001,
-      temp_max: 19,
-      temp_min: 23,
-      wind_speed: 5.3,
-      wind_degree: 13
-    },
-    temperature: 19,
-    weatherState: "Clear",
-    id: 0,
-    photo: {
-      large: "https://images.unsplash.com/photo-1502324676454-4c4943764606?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=1080&fit=max&ixid=eyJhcHBfaWQiOjI0Mjk5fQ&s=1ab1197540623b0b4915cf4332d39a6b",
-      medium: "https://images.unsplash.com/photo-1502324676454-4c4943764606?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=400&fit=max&ixid=eyJhcHBfaWQiOjI0Mjk5fQ&s=a66873ccab107dc4849a073291392f67",
-      small: "https://images.unsplash.com/photo-1502324676454-4c4943764606?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=200&fit=max&ixid=eyJhcHBfaWQiOjI0Mjk5fQ&s=cb36b6bd12c00fa6fb2b0e984f3e8e9d"
-    }
-  }
-}
-
-  otherCities: [
-    {
-      anotherWeather: {
-        cityName: "London",
-        description: "mist",
-        details: {
-          humidity: 55,
-          pressure: 1001,
-          temp_max: 19,
-          temp_min: 23,
-          wind_speed: 5.3,
-          wind_degree: 13
-        },
-        temperature: 12.46,
-        weatherState: "Mist",
-        id: 1,
-        photo: {
-          large: "https://images.unsplash.com/photo-1497216429614-5bd7dbd9fc48?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=1080&fit=max&ixid=eyJhcHBfaWQiOjI0Mjk5fQ&s=86aec973ac9d29d1eb6fe4418a5fd064",
-          medium: "https://images.unsplash.com/photo-1497216429614-5bd7dbd9fc48?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=400&          fit=max&ixid=eyJhcHBfaWQiOjI0Mjk5fQ&s=d677ec77869416fea099158e7ccf4379",
-          small: "https://images.unsplash.com/photo-1497216429614-5bd7dbd9fc48?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=200&         fit=max&ixid=eyJhcHBfaWQiOjI0Mjk5fQ&s=9c9ce355de81020fca18902506ea7d4f"
-        }
-      }
-    }
-  ]
-
-*/
-
-
-
-
-
-/* 
-
-this.state = {
-      error: null,
-      loading: true,
-      clientCity: null,
-      otherCities : [],
-      time: "day",
-      id: 1
-    }
-
-*/
-
-
-
-
-
-
